@@ -11,7 +11,7 @@
 
     <application
         android:label="CameraX10"
-        android:icon="@android:drawable/ic_menu_camera">
+        android:icon="@mipmap/ic_launcher">
 
         <activity
             android:name=".CameraActivity"

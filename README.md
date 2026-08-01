@@ -69,7 +69,7 @@ camerax10/
 │   ├── build.gradle            # Gradle config (for IDE support only, not used for building)
 │   └── src/main/
 │       ├── AndroidManifest.xml
-│       ├── res/                # Empty — no custom resources
+│       ├── res/                # Launcher icon mipmaps only (ldpi/mdpi/hdpi)
 │       └── java/com/camerax10/
 │           ├── CameraActivity.java   # Main activity — all camera logic and UI (~1700 lines)
 │           ├── CameraPreview.java    # SurfaceView for camera preview
@@ -89,10 +89,12 @@ camerax10/
 - Scene mode cycling
 - White balance and color effect settings
 - Auto-geotagging of photos (GPS EXIF data when location available)
+- Exposure compensation (EV) detection and support
 - Zoom via volume keys (using reflection for API 8+ methods)
 
 ### UI
 - Orientation-aware button rotation via `OrientationEventListener` + `canvas.rotate()`
+- Clean viewfinder capture (UI elements hidden during photo capture)
 - Camera-style crosshair focus indicator (yellow=focusing, green=success, red=failure)
 - Grid line overlay options (rule of thirds, 4x4, crosshair, golden ratio)
 - Recording indicator (blinking red dot)

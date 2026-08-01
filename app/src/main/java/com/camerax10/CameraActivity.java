@@ -187,6 +187,7 @@ public class CameraActivity extends Activity {
     private CameraPreview preview;
     private FrameLayout previewFrame;
     private GridOverlay gridOverlay;
+    private LinearLayout sidebar;
     private RotatableButton flashBtn;
     private RotatableButton focusBtn;
     private View shutterBtn;
@@ -226,6 +227,10 @@ public class CameraActivity extends Activity {
     private int currentZoom = 0;
     private int maxZoom = 0;
     private boolean zoomSupported = false;
+    private boolean evSupported = false;
+    private int minEv = 0;
+    private int maxEv = 0;
+    private int currentEv = 0;
 
     private SoundPool soundPool;
     private int shutterSoundId = -1;
@@ -375,7 +380,7 @@ public class CameraActivity extends Activity {
         previewFrame.addView(focusIndicator, focusParams);
 
         // Controls sidebar
-        LinearLayout sidebar = new LinearLayout(this);
+        sidebar = new LinearLayout(this);
         sidebar.setOrientation(LinearLayout.VERTICAL);
         sidebar.setGravity(Gravity.CENTER_HORIZONTAL);
         sidebar.setBackgroundColor(0x80000000);
@@ -554,6 +559,32 @@ public class CameraActivity extends Activity {
             focusIndicator.setVisibility(View.GONE);
         }
     };
+
+    private boolean thumbnailWasVisible = false;
+
+    private boolean uiHiddenForCapture = false;
+
+    private void hideUIForCapture() {
+        uiHiddenForCapture = true;
+        thumbnailWasVisible = thumbnailView.getVisibility() == View.VISIBLE;
+        sidebar.setVisibility(View.INVISIBLE);
+        picSizeBtn.setVisibility(View.INVISIBLE);
+        sceneModeBtn.setVisibility(View.INVISIBLE);
+        gridOverlay.setVisibility(View.INVISIBLE);
+        gpsIndicator.setVisibility(View.INVISIBLE);
+        if (thumbnailWasVisible) thumbnailView.setVisibility(View.INVISIBLE);
+    }
+
+    private void showUIAfterCapture() {
+        if (!uiHiddenForCapture) return;
+        uiHiddenForCapture = false;
+        sidebar.setVisibility(View.VISIBLE);
+        picSizeBtn.setVisibility(View.VISIBLE);
+        sceneModeBtn.setVisibility(View.VISIBLE);
+        gridOverlay.setVisibility(View.VISIBLE);
+        gpsIndicator.setVisibility(View.VISIBLE);
+        if (thumbnailWasVisible) thumbnailView.setVisibility(View.VISIBLE);
+    }
 
     private int dp(int value) {
         float density = getResources().getDisplayMetrics().density;
@@ -766,6 +797,38 @@ public class CameraActivity extends Activity {
         }
     }
 
+    private void detectEvSupport(Camera.Parameters params) {
+        evSupported = false;
+        try {
+            String flat = params.flatten();
+            String minStr = null;
+            String maxStr = null;
+            String[] pairs = flat.split(";");
+            for (String pair : pairs) {
+                if (pair.startsWith("min-exposure-compensation=")) {
+                    minStr = pair.substring("min-exposure-compensation=".length());
+                } else if (pair.startsWith("max-exposure-compensation=")) {
+                    maxStr = pair.substring("max-exposure-compensation=".length());
+                }
+            }
+            if (minStr != null && maxStr != null) {
+                minEv = Integer.parseInt(minStr);
+                maxEv = Integer.parseInt(maxStr);
+                if (minEv != 0 || maxEv != 0) {
+                    evSupported = true;
+                    currentEv = 0;
+                    android.util.Log.i("CameraX10", "EV supported: " + minEv + " to " + maxEv);
+                } else {
+                    android.util.Log.i("CameraX10", "EV range is 0 to 0 — not supported");
+                }
+            } else {
+                android.util.Log.i("CameraX10", "EV parameters not found in camera");
+            }
+        } catch (Exception e) {
+            android.util.Log.e("CameraX10", "EV detection failed", e);
+        }
+    }
+
     private void checkStorage() {
         String state = Environment.getExternalStorageState();
         previewOnly = !Environment.MEDIA_MOUNTED.equals(state);
@@ -835,6 +898,7 @@ public class CameraActivity extends Activity {
             } catch (Exception e) {
                 zoomSupported = false;
             }
+            detectEvSupport(params);
             restoreFlashMode(params);
             restoreFocusMode(params);
             restorePicSize(params);
@@ -1149,6 +1213,7 @@ public class CameraActivity extends Activity {
 
         if (isFocusing) {
             captureAfterFocus = true;
+            hideUIForCapture();
             return;
         }
 
@@ -1157,6 +1222,7 @@ public class CameraActivity extends Activity {
                 || Camera.Parameters.FOCUS_MODE_MACRO.equals(focusMode)) {
             isFocusing = true;
             showFocusing();
+            hideUIForCapture();
             camera.autoFocus(new Camera.AutoFocusCallback() {
                 public void onAutoFocus(boolean success, Camera cam) {
                     isFocusing = false;
@@ -1189,6 +1255,7 @@ public class CameraActivity extends Activity {
             cam.takePicture(null, null, new Camera.PictureCallback() {
                 public void onPictureTaken(final byte[] data, Camera c) {
                     isTakingPicture = false;
+                    showUIAfterCapture();
                     try {
                         c.startPreview();
                     } catch (Exception e) {
@@ -1204,6 +1271,7 @@ public class CameraActivity extends Activity {
             });
         } catch (Exception e) {
             isTakingPicture = false;
+            showUIAfterCapture();
             Toast.makeText(CameraActivity.this, "Capture failed", Toast.LENGTH_SHORT).show();
         }
     }

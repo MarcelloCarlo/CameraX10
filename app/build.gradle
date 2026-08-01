@@ -6,7 +6,7 @@ android {
     defaultConfig {
         applicationId "com.camerax10"
         minSdkVersion 7
-        targetSdkVersion 7
+        targetSdkVersion 28
         versionCode 1
         versionName "1.0"
     }
