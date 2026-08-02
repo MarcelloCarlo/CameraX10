@@ -3,6 +3,7 @@ package com.camerax10;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.CheckBoxPreference;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -22,6 +23,13 @@ public class SettingsActivity extends PreferenceActivity
         PreferenceCategory generalCat = new PreferenceCategory(this);
         generalCat.setTitle("General");
         screen.addPreference(generalCat);
+
+        CheckBoxPreference geotagging = new CheckBoxPreference(this);
+        geotagging.setKey("geotagging_enabled");
+        geotagging.setTitle("Geotagging");
+        geotagging.setSummary("Embed GPS coordinates in photos");
+        geotagging.setDefaultValue(true);
+        generalCat.addPreference(geotagging);
 
         ListPreference jpegQuality = new ListPreference(this);
         jpegQuality.setKey("jpeg_quality");

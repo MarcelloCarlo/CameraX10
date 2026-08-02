@@ -617,7 +617,12 @@ public class CameraActivity extends Activity {
         super.onResume();
         openCamera();
         checkStorage();
-        startLocationUpdates();
+        if (isGeotaggingEnabled()) {
+            startLocationUpdates();
+        } else {
+            lastLocation = null;
+            updateGpsIndicator();
+        }
         loadLastMediaThumbnail();
         initSounds();
         gridOverlay.setGridType(PreferenceManager.getDefaultSharedPreferences(this)
@@ -842,6 +847,11 @@ public class CameraActivity extends Activity {
         }
     }
 
+    private boolean isGeotaggingEnabled() {
+        return PreferenceManager.getDefaultSharedPreferences(this)
+                .getBoolean("geotagging_enabled", true);
+    }
+
     private void startLocationUpdates() {
         try {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
@@ -865,7 +875,10 @@ public class CameraActivity extends Activity {
 
     private void updateGpsIndicator() {
         if (gpsIndicator == null) return;
-        if (lastLocation != null) {
+        if (!isGeotaggingEnabled()) {
+            gpsIndicator.setBackgroundColor(0x80AA0000);
+            gpsIndicator.setVisibility(isVideoMode ? View.GONE : View.VISIBLE);
+        } else if (lastLocation != null) {
             gpsIndicator.setBackgroundColor(0x8000AA00);
         } else {
             gpsIndicator.setBackgroundColor(0x80666666);
